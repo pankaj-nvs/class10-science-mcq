@@ -1,11 +1,16 @@
-function startTest() {
-    const name = document.getElementById("name").value.trim();
-    const roll = document.getElementById("roll").value.trim();
+let activeQuestions = [];
 
-    if (name === "" || roll === "") {
-        alert("नाम और रोल नंबर भरना अनिवार्य है");
+function startTest() {
+    const name = nameInput();
+    const roll = rollInput();
+    const subject = document.getElementById("subject").value;
+
+    if (!name || !roll || !subject) {
+        alert("नाम, रोल नंबर और विषय चुनना अनिवार्य है");
         return;
     }
+
+    activeQuestions = subject === "science" ? scienceQuestions : socialQuestions;
 
     document.getElementById("studentForm").style.display = "none";
     document.getElementById("quizSection").style.display = "block";
@@ -17,15 +22,14 @@ function loadQuestions() {
     const form = document.getElementById("quizForm");
     form.innerHTML = "";
 
-    questions.forEach((q, i) => {
+    activeQuestions.forEach((q, i) => {
         let html = `<p><b>${i + 1}. ${q.q}</b></p>`;
         q.options.forEach((opt, j) => {
             html += `
-                <label>
-                    <input type="radio" name="q${i}" value="${j}">
-                    ${opt}
-                </label><br>
-            `;
+            <label id="q${i}o${j}">
+                <input type="radio" name="q${i}" value="${j}">
+                ${opt}
+            </label>`;
         });
         form.innerHTML += html + "<br>";
     });
@@ -34,28 +38,29 @@ function loadQuestions() {
 function submitTest() {
     let score = 0;
 
-    questions.forEach((q, i) => {
+    activeQuestions.forEach((q, i) => {
         const selected = document.querySelector(`input[name="q${i}"]:checked`);
-        if (selected && parseInt(selected.value) === q.ans) {
-            score++;
-        }
+        q.options.forEach((_, j) => {
+            const label = document.getElementById(`q${i}o${j}`);
+            label.querySelector("input").disabled = true;
+
+            if (j === q.ans) {
+                label.style.background = "#c8e6c9";
+            }
+            if (selected && j == selected.value && j !== q.ans) {
+                label.style.background = "#ffcdd2";
+            }
+        });
+
+        if (selected && parseInt(selected.value) === q.ans) score++;
     });
 
-    const name = document.getElementById("name").value;
-    const roll = document.getElementById("roll").value;
-
-    alert(`छात्र: ${name}\nरोल: ${roll}\nस्कोर: ${score} / 30`);
-
-    downloadCSV(name, roll, score);
+    alert(`आपका स्कोर: ${score} / ${activeQuestions.length}`);
 }
 
-function downloadCSV(name, roll, score) {
-    const csv = `Name,Roll,Score\n${name},${roll},${score}`;
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "result.csv";
-    a.click();
+function nameInput() {
+    return document.getElementById("name").value.trim();
+}
+function rollInput() {
+    return document.getElementById("roll").value.trim();
 }
